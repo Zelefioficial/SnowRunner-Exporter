@@ -1,201 +1,201 @@
 # SnowRunner Exporter
 
-Личный инструмент для Windows: находит установленный SnowRunner, показывает список машин (база, DLC, моды)
-и экспортирует выбранную в **GLB** (основной формат) или **OBJ + MTL** с текстурами в PNG. Результат открывается
-в Blender (File > Import > glTF 2.0). Файлы игры только читаются, ничего не распаковывается на диск целиком.
+[Русская версия](README.ru.md)
 
-## Требования
+A personal Windows tool that finds your installed SnowRunner, shows the vehicle list (base game, DLC, mods) and exports the selected vehicle to **GLB** (main format) or **OBJ + MTL** with PNG textures. The result opens in Blender (File > Import > glTF 2.0). Game files are only read; nothing is unpacked to disk as a whole.
 
-* Windows 10 или 11.
-* Python 3.14 (на нём проверено). Пакеты: numpy и Pillow из `requirements.txt`. tkinter входит в стандартную поставку Python с официального сайта.
-* Установленный SnowRunner (Steam или Epic Games) с данными игры. Игра нужна для экспорта: программа читает её архивы и ничего в них не меняет.
+## Requirements
 
-## Запуск
+* Windows 10 or 11.
+* Python 3.14 (tested with it). Packages: numpy and Pillow from `requirements.txt`. tkinter is included in the standard Python installer from python.org.
+* SnowRunner installed (Steam or Epic Games) with its game data. The game is required for export: the program reads its archives and does not change them.
+
+## Running
 
 ```powershell
-cd "путь\к\папке\SnowRunner Exporter"
-pip install -r requirements.txt        # numpy, Pillow (tkinter входит в Python)
+cd "path\to\SnowRunner Exporter"
+pip install -r requirements.txt        # numpy, Pillow (tkinter is included in Python)
 python main.py
 ```
 
-1. Игра ищется сама (реестр Steam, `libraryfolders.vdf`, манифесты и типовые пути Epic). Если не найдена, нажмите «Папка игры...» и выберите корень SnowRunner (папка, где лежит `preload\paks\client\initial.pak`). Путь сохраняется в `config.json`.
-2. Машины сгруппированы по типам, как в игре: Легковая (Scout), Шоссейник, Внедорожник, Тяжёлый, Сверхтяжёлый, Прицепы. Группу можно свернуть кликом по заголовку. Фильтры: поиск (Ctrl+F), тип, источник (База / DLC / Моды), язык названий RU/EN. Выделите машину (Ctrl+клик - несколько), выберите формат и папку вывода, нажмите «Экспортировать». Прогресс показан в процентах: полоса заполняется снегом.
-3. Результат: `<папка вывода>\<id машины>\<id>.glb` (или `.obj` + `.mtl`) и `textures\*.png`. Двойной клик по машине тоже запускает экспорт.
+1. The game is found automatically (Steam registry, `libraryfolders.vdf`, Epic manifests and typical Epic paths). If it is not found, click "Game folder..." and select the SnowRunner root folder (the one containing `preload\paks\client\initial.pak`). The path is saved to `config.json`.
+2. Vehicles are grouped by type, as in the game: Light (Scout), Highway, Off-road, Heavy, Heavy duty, Trailers. Click a group header to collapse it. Filters: search (Ctrl+F), type, source (Base / DLC / Mods), vehicle name language RU/EN. Select a vehicle (Ctrl+click for several), choose the format and output folder, then click "Export". Progress is shown as a percentage: the bar fills with snow.
+3. Output: `<output folder>\<vehicle id>\<id>.glb` (or `.obj` + `.mtl`) and `textures\*.png`. Double-clicking a vehicle also starts the export.
 
-**Значок и панель задач.** У приложения свой значок (снежинка на графитовой плитке) в заголовке окна и в панели задач, окно не группируется под Python. Закрепить можно двумя способами: правой кнопкой по кнопке запущенного приложения в панели задач, «Закрепить на панели задач» (закреплённый значок остаётся снежинкой и запускает `main.py` без консоли), либо кнопкой «Ярлык» в шапке: она создаёт на рабочем столе ярлык со значком и тем же идентификатором, его тоже можно закрепить. Файлы значка лежат в `assets\` и пересоздаются сами, если их удалить.
+**Icon and taskbar.** The app has its own icon (a snowflake on a graphite tile) in the window title bar and on the taskbar, so the window is not grouped under Python. You can pin it in two ways: right-click the running app's taskbar button and choose "Pin to taskbar" (the pinned icon stays a snowflake and launches `main.py` without a console), or click "Shortcut" in the header: it creates a desktop shortcut with the same icon and app identifier, which you can also pin. Icon files are in `assets\` and are recreated automatically if deleted.
 
-Ошибка одной машины пишется в лог и не останавливает остальные. Технический лог также пишется в `exporter.log`.
-Список машин кэшируется в `cache.json` (обновляется при изменении архивов). Пример проверки в Blender без интерфейса:
+An error in one vehicle is written to the log and does not stop the others. The technical log is also written to `exporter.log`.
+The vehicle list is cached in `cache.json` (updated when the archives change). Example of checking the result in Blender without the interface:
 
 ```powershell
 blender --background --python tools\blender_check.py -- output\international_scout_800\international_scout_800.glb preview.png
 ```
 
-## Модули
+## Modules
 
-| файл | назначение |
+| file | purpose |
 |---|---|
-| `game_locator.py` | поиск игры, папка модов, `config.json` |
-| `pak_reader.py` | единый индекс «виртуальный путь -> (архив, запись)», чтение в память |
-| `vehicle_parser.py` | XML машин, локализация, колёса, `cache.json` |
-| `stm_converter.py` | разбор формата STM, оси и масштаб для glTF |
-| `texture_converter.py` | `.pct` (BC7) и TGA/DDS модов -> PNG |
-| `exporter.py` | сцена, собственный GLB-writer, OBJ+MTL |
-| `gui.py`, `ui_kit.py`, `main.py` | интерфейс (тёмная скруглённая тема, снежный прогресс), виджеты, запуск |
-| `app_identity.py` | значок-снежинка (`assets/app.ico`, рисуется Pillow), значок в панели задач Windows, закрепление, ярлык |
-| `tools/blender_check.py` | проверка импорта в Blender в фоновом режиме |
-| `build/pyinstaller/SnowRunner_Exporter.spec` | рецепт сборки exe (PyInstaller) |
-| `assets/` | значок приложения (`app.ico`, `app.png`) и версия значка |
+| `game_locator.py` | game search, mods folder, `config.json` |
+| `pak_reader.py` | single index "virtual path -> (archive, entry)", reading into memory |
+| `vehicle_parser.py` | vehicle XML, localization, wheels, `cache.json` |
+| `stm_converter.py` | STM format parsing, axes and scale for glTF |
+| `texture_converter.py` | `.pct` (BC7) and mod TGA/DDS -> PNG |
+| `exporter.py` | scene, own GLB writer, OBJ+MTL |
+| `gui.py`, `ui_kit.py`, `main.py` | interface (dark rounded theme, snow progress), widgets, startup |
+| `app_identity.py` | snowflake icon (`assets/app.ico`, drawn with Pillow), Windows taskbar icon, pinning, shortcut |
+| `tools/blender_check.py` | import check in Blender in background mode |
+| `build/pyinstaller/SnowRunner_Exporter.spec` | exe build recipe (PyInstaller) |
+| `assets/` | app icon (`app.ico`, `app.png`) and icon version |
 
-## Что найдено на реальной установке
+## Findings from a real installation
 
-* Архивы: `preload\paks\client\*.pak` - обычные ZIP. Нужны: `initial.pak` (XML, строки), `shared.pak` (модели), `shared_textures.pak`, `shared_textures_base.pak`, `main_menu_textures.pak` (часть текстур колёс), `mod.pak` (шаблон мода из набора редактора). Отдельных `dlc_*.pak` в этой установке нет.
-* **DLC лежат внутри `initial.pak`** в `[media]/_dlc/<имя>/classes/trucks/`, а их модели и текстуры в общих `shared*.pak`. Поэтому «источник DLC» определяется по пути XML. Приложение не может узнать, куплен ли DLC: файлы присутствуют у всех.
-* Описания: `[media]/classes/trucks/<id>.xml` (база), `.../trailers/<id>.xml` (прицепы). Файл содержит два корневых элемента (`<_templates>` и `<Truck>`), поэтому парсер оборачивает текст в `<root>`.
-* Связи: `PhysicsModel/@Mesh="trucks/<id>"` -> `[meshes]/trucks_<id>` (STM, без расширения); `GameData/UiDesc/@UiName` -> строка в `[strings]/strings_<язык>.str` (UTF-16LE, `КЛЮЧ<TAB>"текст"`); колёса: `TruckData/Wheels/@DefaultWheelType/DefaultTire/DefaultRim` -> `classes/wheels/<тип>.xml` -> `[meshes]/wheels_<tire|rim>_...`; позиции колёс - `Wheel/@Pos`, масштаб - `CompatibleWheels/@Scale` для типа по умолчанию.
-* Материалы описаны в XML внутри самого STM: `AlbedoMap`, `NormalMap`, `ShadingMap`, `EmissiveMap`, `Blending="alpha"`. Путь `trucks/x__d.tga` соответствует `[textures]/pct/trucks_x__d.pct`.
-* Найдено 190 машин (121 грузовик, 69 прицепов): 62 базовых, 127 DLC, 1 из `mod.pak`. Папки модов `Documents\My Games\SnowRunner\base\Mods` на этом ПК нет или она пуста, но поддержка есть (`.pak`/`.zip`, пути вида `classes/trucks/...`, `meshes/...`).
+* Archives: `preload\paks\client\*.pak` are regular ZIP files. Needed: `initial.pak` (XML, strings), `shared.pak` (models), `shared_textures.pak`, `shared_textures_base.pak`, `main_menu_textures.pak` (part of the wheel textures), `mod.pak` (mod template from the editor kit). This installation has no separate `dlc_*.pak` files.
+* **DLC is inside `initial.pak`** in `[media]/_dlc/<name>/classes/trucks/`, while their models and textures are in the shared `shared*.pak` files. That is why the "DLC source" is determined from the XML path. The app cannot tell whether a DLC is owned: the files are present for everyone.
+* Descriptions: `[media]/classes/trucks/<id>.xml` (base), `.../trailers/<id>.xml` (trailers). A file contains two root elements (`<_templates>` and `<Truck>`), so the parser wraps the text in `<root>`.
+* Links: `PhysicsModel/@Mesh="trucks/<id>"` -> `[meshes]/trucks_<id>` (STM, no extension); `GameData/UiDesc/@UiName` -> a string in `[strings]/strings_<language>.str` (UTF-16LE, `KEY<TAB>"text"`); wheels: `TruckData/Wheels/@DefaultWheelType/DefaultTire/DefaultRim` -> `classes/wheels/<type>.xml` -> `[meshes]/wheels_<tire|rim>_...`; wheel positions are `Wheel/@Pos`, scale is `CompatibleWheels/@Scale` for the default type.
+* Materials are described in the XML inside the STM itself: `AlbedoMap`, `NormalMap`, `ShadingMap`, `EmissiveMap`, `Blending="alpha"`. The path `trucks/x__d.tga` corresponds to `[textures]/pct/trucks_x__d.pct`.
+* 190 vehicles found (121 trucks, 69 trailers): 62 base, 127 DLC, 1 from `mod.pak`. On this PC the mods folder `Documents\My Games\SnowRunner\base\Mods` is missing or empty, but support is there (`.pak`/`.zip`, paths like `classes/trucks/...`, `meshes/...`).
 
-## Формат STM (восстановлен по данным, little-endian)
+## STM format (reconstructed from data, little-endian)
 
 ```
-u32  xml_len                                    длина XML
+u32  xml_len                                    XML length
      xml                                        <CombineXMesh>: <Material .../>, <MaterialOverride .../>, <SocketPoint .../>
---- бинарная часть ---
-u32  0x0133EF63, u32 44                         сигнатура/версия (смысл не выяснен)
-f32  bbox[6]                                    min xyz, max xyz всей модели
-u32  счётчик корней (13 у Scout; не нужен для чтения)
-узел * N:
-  i16 parent (-2 у корня), u16 index (0,1,2...), u32 kind (в разборе не используется)
-  u32 name_len, name (с нулём; бывают не-ASCII символы: в игре есть кириллическая «С» в BoneСabinTwist_cdt)
-  f32 matrix[16]                                4x4 по строкам, перенос в последней строке, локальная к parent
-  если следующий u32 == 0:  кость/пустышка; далее ещё u32 0 (общий итог: 4 байта), геометрии нет
-  иначе - блок меша:
+--- binary part ---
+u32  0x0133EF63, u32 44                         signature/version (meaning not determined)
+f32  bbox[6]                                    min xyz, max xyz of the whole model
+u32  root count (13 for Scout; not needed for reading)
+node * N:
+  i16 parent (-2 for root), u16 index (0,1,2...), u32 kind (not used in parsing)
+  u32 name_len, name (null-terminated; some non-ASCII characters occur: the game has a Cyrillic «С» in BoneСabinTwist_cdt)
+  f32 matrix[16]                                4x4 row-wise, translation in the last row, local to parent
+  if the next u32 == 0:  bone/dummy; followed by another u32 0 (4 bytes total), no geometry
+  otherwise - a mesh block:
     u32 vertex_count, u32 triangle_count
     u32 len + mesh_name
     u32 a, u32 n_materials, u32 0
-    n_materials * (u32 len + имя материала)
-    u32 K                                       число костей (0 - жёсткий меш)
-    K * f32[16]                                 обратные bind-матрицы; K[j] == inverse(мировая матрица кости joints[j]) (проверено, разница 0.0)
-    если K > 0:  u32 A (1 - все жёсткие, 2 - есть скиннинг), u32 nSub, u32 nb[nSub]
-                 для каждого подмеша: u32 mat, first_tri, tri_count, first_vtx, vtx_count; затем nb[i] индексов палитры
-                 u16 joints[K]                  индексы узлов-костей
-                 f32 bbox[6]
-                 u32 1,0,0,tri_count,0,vertex_count   (повтор счётчиков)
-    если K == 0: u16 joint, f32 bbox[6], u32 n; n * (5 u32 как выше) - таблица подмешей (n == 0 у коллизий cdt_*)
+    n_materials * (u32 len + material name)
+    u32 K                                       number of bones (0 = rigid mesh)
+    K * f32[16]                                 inverse bind matrices; K[j] == inverse(world matrix of bone joints[j]) (verified, difference 0.0)
+    if K > 0:  u32 A (1 - all rigid, 2 - skinning present), u32 nSub, u32 nb[nSub]
+               for each submesh: u32 mat, first_tri, tri_count, first_vtx, vtx_count; then nb[i] palette indices
+               u16 joints[K]                    indices of bone nodes
+               f32 bbox[6]
+               u32 1,0,0,tri_count,0,vertex_count   (repeated counts)
+    if K == 0: u16 joint, f32 bbox[6], u32 n; n * (5 u32 as above) - submesh table (n == 0 for cdt_* collisions)
     u32 n_decl; n_decl * {u16 stream, u16 offset, u16 type, u8 flag, u8 usage}
-    u32 0xFF, u32 0x11                          (смысл не выяснен)
-    vertex_count * stride байт                  stride = смещение последнего элемента + его размер
-    triangle_count * 3 * u16 индексов           (u32, если вершин > 65536; в данных не встречалось)
-    блок неизвестной длины (физика коллизий, у cdt_* узлов)  - пропускается поиском заголовка следующего узла
+    u32 0xFF, u32 0x11                          (meaning not determined)
+    vertex_count * stride bytes                 stride = offset of the last element + its size
+    triangle_count * 3 * u16 indices            (u32 if vertices > 65536; never seen in the data)
+    block of unknown length (collision physics, in cdt_* nodes) - skipped by searching for the next node header
 ```
 
-Типы элементов вершины: `2` = float3 (usage 0: позиция), `1` = float2 (usage 0: UV0; usage 6: вторые UV, lightmap, не используются), `8` = 4 байта (usage 1: нормаль, usage 2: касательная, usage 4: веса костей, unorm8), `5` = 4 байта (usage 5: индексы костей, u8). Типовой stride = 44. Нормаль: `n = byte/255*2 - 1`.
+Vertex element types: `2` = float3 (usage 0: position), `1` = float2 (usage 0: UV0; usage 6: second UVs, lightmap, not used), `8` = 4 bytes (usage 1: normal, usage 2: tangent, usage 4: bone weights, unorm8), `5` = 4 bytes (usage 5: bone indices, u8). Typical stride is 44. Normal: `n = byte/255*2 - 1`.
 
-Проверено на реальных данных, а не предположено:
+Verified on real data, not assumed:
 
-* позиции уже в системе модели (bind-поза), без трансформации костей; bbox каждого меша лежит внутри bbox файла;
-* разобрано 14 252 из 14 280 STM из `shared.pak` (все модели машин, прицепов, аддонов, колёс); 28 не разобрались, это здания-ориентиры (`landmarks_*_hut_*`) и `animesh_*`, к машинам не относятся; в позициях нет NaN;
-* все 189 машин с STM собираются в сцену без ошибок;
-* обход треугольников согласован с нормалями из файла у 100 % граней после преобразования осей (проверено в Blender).
+* positions are already in model space (bind pose), with no bone transforms; each mesh bbox lies inside the file bbox;
+* 14,252 of 14,280 STM files from `shared.pak` were parsed (all vehicle, trailer, addon and wheel models); 28 were not: they are landmark buildings (`landmarks_*_hut_*`) and `animesh_*`, which are not vehicles; there is no NaN in the positions;
+* all 189 vehicles with an STM are assembled into a scene without errors;
+* triangle winding matches the normals in the file for 100 % of faces after the axis conversion (checked in Blender).
 
-**Оси.** В игре X - вперёд, Y - вверх, Z - влево (левосторонняя система: `mirror_left` и руль US-машин лежат в +Z). Для glTF: `(x,y,z) -> (z,y,x)`, порядок вершин в треугольнике разворачивается. Единицы - метры. Габариты экспортированного Scout 800: 1.83 x 3.95 x 1.84 м (ш x д x в).
+**Axes.** In the game X is forward, Y is up, Z is left (a left-handed system: `mirror_left` and the steering wheel of US vehicles lie in +Z). For glTF: `(x,y,z) -> (z,y,x)`, and the vertex order in each triangle is reversed. Units are meters. Dimensions of the exported Scout 800: 1.83 x 3.95 x 1.84 m (W x L x H).
 
-## Текстуры (`.pct`)
+## Textures (`.pct`)
 
-Заголовок `... 'TCIP' ...`, ширина/высота на смещениях `0x10`/`0x14`, число mip на `0x30`. Данные: **BC7** (DXGI 98), уровень 0 - самый большой, сразу за заголовком (его длина = размер `.pct_header`), далее вся цепочка mip и 6 служебных байт. Декодирование проверено сравнением с оригинальными TGA из `mod.pak` (11 текстур, PSNR 46-53 дБ, строки не перевёрнуты). Декодер: Pillow (BC7 через DDS-обёртку DX10), собственного декодера нет.
+Header `... 'TCIP' ...`, width/height at offsets `0x10`/`0x14`, mip count at `0x30`. Data: **BC7** (DXGI 98). Level 0 is the largest and comes right after the header (its length equals the `.pct_header` size), followed by the full mip chain and 6 trailing bytes. Decoding was verified by comparing with the original TGA files from `mod.pak` (11 textures, PSNR 46-53 dB, rows not flipped). Decoder: Pillow (BC7 via a DX10 DDS wrapper); there is no custom decoder.
 
-* `__d`, `__d_a` - альбедо (с альфой только у материалов `Blending="alpha"`, у остальных канал отбрасывается);
-* `__n_d` - карта нормалей RGB. Зелёный канал **инвертируется**: по интегрируемости градиентов (`corr(dNx/drow, dNy/dcol) > 0` у всех 7 проверенных карт) игра хранит нормали в DirectX-конвенции. Отключается галочкой «Инверсия зелёного нормалей»;
-* `__sh_d` - собирается в glTF ORM: R = затенение (игровой B), G = шероховатость (игровой G), B = металличность (игровой R). **Это предположение** по статистике (стекло: R=0, G~55, B=255; бампера: B высокий), документации формата нет;
-* `__em_d` - эмиссия.
+* `__d`, `__d_a` - albedo (alpha is kept only for `Blending="alpha"` materials; otherwise the channel is dropped);
+* `__n_d` - normal map, RGB. The green channel is **inverted**: by gradient integrability (`corr(dNx/drow, dNy/dcol) > 0` for all 7 checked maps) the game stores normals in the DirectX convention. Disable it with the "Invert green normal channel" checkbox;
+* `__sh_d` - packed into a glTF ORM: R = occlusion (game B), G = roughness (game G), B = metallic (game R). **This is an assumption** based on statistics (glass: R=0, G~55, B=255; bumpers: high B); there is no format documentation;
+* `__em_d` - emission.
 
-Если нет полного `.pct`, берётся `.pct_base` (128 px) с записью в лог. Неподдерживаемые форматы (например, 4 текстуры с размером не кратным 4, 8-битные `__sh_s`) пишутся в лог, экспорт продолжается.
+If a full `.pct` is missing, `.pct_base` (128 px) is used and noted in the log. Unsupported formats (for example 4 textures whose size is not a multiple of 4, or 8-bit `__sh_s`) are written to the log, and the export continues.
 
-## Состав экспорта
+## Export contents
 
-`Parts` (детали: кабина, кузов, стёкла, зеркала, крыша...), `Wheels` (колёса `wheel_left_N`/`wheel_right_N` с шиной и диском по умолчанию, позиции из XML), `Skeleton` (кости как пустышки с локальными матрицами). Не выгружаются: `lp_*` (упрощённый LOD при наличии `hp_*`), служебные объёмы с материалом `lambert1` (`_cockpit`), коллизии `cdt_*`. Всё это включается и выключается галочками.
+`Parts` (parts: cab, body, glass, mirrors, roof...), `Wheels` (`wheel_left_N`/`wheel_right_N` wheels with the default tire and rim, positions from the XML), `Skeleton` (bones as empty objects with local matrices). Not exported: `lp_*` (simplified LOD when `hp_*` exists), service volumes with the `lambert1` material (`_cockpit`), collisions `cdt_*`. All of these can be turned on and off with checkboxes.
 
-## Кастомизация
+## Customization
 
-Галочка «Кастомизация» выгружает детали **отдельным файлом** `<id>_customization.glb` (или `.obj`) рядом с `<id>.glb`; файл машины остаётся чистым. В файле кастомизации узел `Customization`: группа на тип гнезда (`Kolob74760Bumper`, `Kolob74760Exhaust`, `...Snorkel`, краны, рамы, багажники), в ней узел на каждую деталь. «Наклейки и мелочи в салоне» кладёт стикеры, игрушки и ароматизаторы в узел `Cosmetics` того же файла. Оба файла имеют общее начало координат: импортируйте их в одну сцену Blender, и детали встанут на место. Текстуры обоих файлов лежат в общей папке `textures`.
+The "Customization" checkbox exports parts to a **separate file** `<id>_customization.glb` (or `.obj`) next to `<id>.glb`; the vehicle file stays clean. In the customization file there is a `Customization` node: a group per mount type (`Kolob74760Bumper`, `Kolob74760Exhaust`, `...Snorkel`, cranes, frames, roof racks), and in it a node for each part. "Stickers and small cabin items" puts stickers, toys and air fresheners into a `Cosmetics` node in the same file. Both files share the same origin: import them into one Blender scene and the parts line up. The textures of both files are in the shared `textures` folder.
 
-* Деталь подходит машине, если `<InstallSocket Type>` аддона совпадает с `<Socket Names>` в `<AddonSockets>` машины. Варианты вроде `front_bumper_1` берут гнездо и модель из `<_parent File>`.
-* Модели аддонов лежат в осях машины, поэтому ставятся без смещения. Все варианты одного гнезда накладываются друг на друга: лишние скрывайте в Blender.
-* У деталей выгружаются базовые текстуры (управляются общей галочкой «Текстуры (PNG)»). Окраски и камуфляжи не выгружаются. Файлы получаются тяжёлыми: Kenworth 963 со всей кастомизацией около 500 МБ и около 2 минут экспорта.
-* Габариты в журнале считаются по самой машине, без деталей кастомизации.
-* Кнопка «Выбрать детали...» открывает список деталей выбранной машины по группам (бампер, глушитель, шноркель и т.д.). Отмеченные детали выгружаются независимо от галочек; выбор запоминается для каждой машины (`addon_choice` в `config.json`), «Сбросить выбор» возвращает управление галочками. Наклейки и мелочи в списке свёрнуты.
+* A part fits a vehicle if the addon's `<InstallSocket Type>` matches `<Socket Names>` in the vehicle's `<AddonSockets>`. Variants such as `front_bumper_1` take the mount and model from `<_parent File>`.
+* Addon models are in the vehicle's axes, so they are placed without an offset. All variants of the same mount overlap: hide the extra ones in Blender.
+* Parts export their base textures (controlled by the general "Textures (PNG)" checkbox). Paint jobs and camouflage are not exported. The files are heavy: Kenworth 963 with full customization is about 500 MB and takes about 2 minutes to export.
+* Dimensions in the log are computed from the vehicle itself, without customization parts.
+* The "Select..." button opens the parts list of the selected vehicle grouped by category (bumper, exhaust, snorkel, etc.). Checked parts are exported regardless of the checkboxes; the selection is remembered for each vehicle (`addon_choice` in `config.json`), and "Reset selection" hands control back to the checkboxes. Stickers and small items are collapsed in the list.
 
-## О программе (окно в приложении)
+## About (window in the app)
 
-Кнопка «О программе» в шапке открывает справку: что делает приложение, порядок работы, какие файлы получаются, смысл каждой галочки и ограничения. Текст лежит в `about.py` (`SECTIONS`).
+The "About" button in the header opens a help window: what the app does, the workflow, which files are produced, what each checkbox means, and the limitations. The text is in `about.py` (`SECTIONS`).
 
-## Превью при наведении
+## Hover preview
 
-Указатель на машине в списке или на детали в окне выбора показывает картинку через 0,4 с. Игра не содержит готовых иконок в доступных архивах, поэтому картинку строит `preview.py`: программная отрисовка треугольников (вид спереди-слева сверху) с цветом из уменьшенной базовой текстуры, стёкла пропускаются. Это оценочный вид, не рендер игры. Результаты лежат на диске в `previews\` рядом с `config.json` (в exe - `%LOCALAPPDATA%\SnowRunnerExporter\previews`), поэтому повторно открываются сразу; папку можно удалять.
+Hovering over a vehicle in the list or a part in the selection window shows a picture after 0.4 s. The archives do not contain ready-made icons, so `preview.py` builds the picture: software drawing of triangles (front-left-top view) with colors taken from a downscaled base texture; glass is skipped. It is an approximate view, not a render from the game. Results are stored on disk in `previews\` next to `config.json` (in the exe: `%LOCALAPPDATA%\SnowRunnerExporter\previews`), so they open instantly next time; the folder can be deleted.
 
-## Поиск по номеру DLC
+## DLC number search
 
-Фильтр «DLC» открывает ряд номеров: 1, 2, ... 19 и «Прочие» (trial, ru_08). Под номером собраны все подвыпуски (14 включает dlc_14, dlc_14_1, dlc_14_2). В поле поиска работают запросы `dlc 14`, `dlc14`, `dlc_14_1`.
+The "DLC" filter shows a row of numbers: 1, 2, ... 19 and "Other" (trial, ru_08). Each number groups all its sub-releases (14 includes dlc_14, dlc_14_1, dlc_14_2). Search queries `dlc 14`, `dlc14` and `dlc_14_1` work.
 
-## Проверенные машины (Blender 5.1.2, `--background`, импорт без ошибок, все текстуры загружены, габариты верные)
+## Verified vehicles (Blender 5.1.2, `--background`, import without errors, all textures loaded, dimensions correct)
 
-| машина | источник | габариты ш x д x в, м | деталей / текстур |
+| vehicle | source | dimensions W x L x H, m | parts / textures |
 |---|---|---|---|
-| International Scout 800 (лёгкая) | база | 1.83 x 3.95 x 1.84 | 19 / 24 |
-| Kolob 74760 (тяжёлая) | база | 3.41 x 9.74 x 3.89 | 27 / 28 |
+| International Scout 800 (light) | base | 1.83 x 3.95 x 1.84 | 19 / 24 |
+| Kolob 74760 (heavy) | base | 3.41 x 9.74 x 3.89 | 27 / 28 |
 | Kenworth 963 | DLC dlc_10 | 4.25 x 13.19 x 3.95 | 25 / 32 |
 | TUZ 16 Actaeon | DLC dlc_1_1 | 2.55 x 5.53 x 2.72 | 16 / 22 |
-| Scout flatbed trailer 1 (прицеп) | база | 2.69 x 5.81 x 1.66 | 1 / 7 |
+| Scout flatbed trailer 1 (trailer) | base | 2.69 x 5.81 x 1.66 | 1 / 7 |
 
-OBJ+MTL проверен на Scout 800 (те же габариты, 100 % согласованность нормалей). Второй аргумент `tools\blender_check.py` задаёт PNG-превью, снятое Blender Workbench.
+OBJ+MTL was verified on Scout 800 (same dimensions, 100 % normal consistency). The second argument of `tools\blender_check.py` sets the PNG preview rendered with Blender Workbench.
 
-## Поддерживается
+## Supported
 
-* автопоиск игры, ручной выбор, `config.json`; архивы без распаковки; приоритет база < DLC-архивы < моды;
-* список 190 машин с названиями на русском/английском (переключатель), поиск по названию и ID, фильтр источника, кэш;
-* экспорт геометрии, нормалей, UV, материалов, иерархии деталей; GLB с текстурами внутри файла и PNG рядом, OBJ+MTL;
-* пакетный экспорт нескольких машин в фоновом потоке, ошибки одной машины не останавливают приложение.
+* automatic game search, manual selection, `config.json`; archives are read without unpacking; priority base < DLC archives < mods;
+* list of 190 vehicles with names in Russian/English (switchable), search by name and ID, source filter, cache;
+* export of geometry, normals, UVs, materials and part hierarchy; GLB with textures embedded and PNG files alongside, OBJ+MTL;
+* batch export of several vehicles in a background thread; an error in one vehicle does not stop the app.
 
-## Не поддерживается / не расшифровано
+## Not supported / not decoded
 
-* **Анимации**: в STM их не нашёл. **Веса скиннинга** прочитаны (usage 4/5), но не экспортируются: детали выгружаются в bind-позе без привязки к костям, кости даются отдельными пустышками.
-* **Окраска (skins)**: `MaterialOverride` с `TintMap` (`__cc__d`) и вариантами `wt` не применяется, выгружается базовое альбедо; поэтому многие машины выглядят тёмными или серыми, это содержимое текстур, а не ошибка декодирования.
-* **Кастомизация** выгружается галочками (см. «Кастомизация» ниже), окраски (текстурные схемы) нет; колёса только комплектации по умолчанию. У части прицепов колёса по умолчанию в XML не заданы (в логе предупреждение).
-* **Моды с FBX** (шаблон `mod_scout` из `mod.pak`): FBX копируется как есть, текстуры конвертируются в PNG, материалы нужно назначить вручную.
-* Смысл полей: `kind` узла, сигнатура `0x0133EF63`, пара `0xFF/0x11` перед вершинами, структура блока физики у `cdt_*`, касательные (usage 2) не используются.
-* Масштаб колёс (`CompatibleWheels/@Scale` первого подходящего типа) и поворот левых колёс (видимая сторона диска смотрит в -Z) выведены из данных (радиус шины в мешe = 1, ширина совпадает с реальной), но не сверялись с игрой.
+* **Animations**: none found in STM. **Skinning weights** are read (usage 4/5) but not exported: parts are exported in bind pose without bone binding, and bones are exported as separate empty objects.
+* **Paint jobs (skins)**: `MaterialOverride` with `TintMap` (`__cc__d`) and `wt` variants are not applied; the base albedo is exported. That is why many vehicles look dark or gray. This is the content of the textures, not a decoding error.
+* **Customization** is exported via checkboxes (see "Customization" above); paint schemes are not supported; wheels are only the default configuration. Some trailers have no default wheels defined in the XML (a warning is written to the log).
+* **Mods with FBX** (the `mod_scout` template from `mod.pak`): the FBX is copied as is, textures are converted to PNG, and materials must be assigned manually.
+* Meaning of some fields: node `kind`, signature `0x0133EF63`, the `0xFF/0x11` pair before the vertices, the physics block structure in `cdt_*`, tangents (usage 2) are not used.
+* The wheel scale (`CompatibleWheels/@Scale` of the first matching type) and the rotation of left wheels (the visible side of the rim faces -Z) were derived from data (tire radius in the mesh = 1, width matches the real one) but were not checked against the game.
 
-## Известные проблемы
+## Known issues
 
-* Первый экспорт тяжёлой машины занимает 15-25 с (декодирование BC7 в Pillow); GLB весит 50-120 МБ из-за PNG внутри.
-* Верность предположений про ORM и инверсию зелёного канала проверена только косвенно (статистика); если рельеф выглядит вывернутым, снимите галочку инверсии.
-* Запрет на неподходящие кодировки в консоли: лог в окне и `exporter.log` в UTF-8; при запуске из консоли Windows русские сообщения могут отображаться иероглифами (на файлы это не влияет).
+* The first export of a heavy vehicle takes 15-25 s (BC7 decoding in Pillow); the GLB is 50-120 MB because of the PNGs inside.
+* The assumptions about ORM and green-channel inversion were verified only indirectly (by statistics); if the relief looks inverted, untick the inversion checkbox.
+* Console encoding: the log in the window and `exporter.log` use UTF-8. When started from a console, Russian messages may show up as garbled characters on Windows (the files are not affected).
 
-## Файлы, которые создаёт программа
+## Files the app creates
 
-Не входят в репозиторий (см. `.gitignore`), создаются при работе:
+These are not part of the repository (see `.gitignore`) and are created during use:
 
-* `config.json` - путь к игре, язык, выбранные опции, выбор деталей по машинам;
-* `cache.json` - список машин, `addons.json` - список деталей кастомизации;
-* `exporter.log` - журнал работы;
-* `previews\` - картинки превью для подсказок.
+* `config.json` - game path, language, selected options, part selection per vehicle;
+* `cache.json` - vehicle list; `addons.json` - list of customization parts;
+* `exporter.log` - work log;
+* `previews\` - hover preview pictures.
 
-При запуске из исходников они лежат рядом с кодом; в собранном exe - в `%LOCALAPPDATA%\SnowRunnerExporter`. Удаление этих файлов безопасно: программа создаст их заново.
+When run from source they are placed next to the code; in the built exe they go to `%LOCALAPPDATA%\SnowRunnerExporter`. Deleting these files is safe: the app recreates them.
 
-## Сборка exe
+## Building the exe
 
 ```powershell
 python -m pip install pyinstaller
 python -m PyInstaller --noconfirm build\pyinstaller\SnowRunner_Exporter.spec
 ```
 
-Результат: `dist\SnowRunner_Exporter.exe` (около 33 МБ). Команду запускайте из папки проекта: пути в `.spec` относительные. Сборка проверена с PyInstaller 6.22.3. Exe не подписан цифровой подписью, поэтому Windows SmartScreen может показать предупреждение при первом запуске.
+Result: `dist\SnowRunner_Exporter.exe` (about 33 MB). Run the command from the project folder: the paths in the `.spec` file are relative. The build was verified with PyInstaller 6.22.3. The exe is not digitally signed, so Windows SmartScreen may show a warning on first launch.
 
-## Лицензия
+## License
 
-Проект распространяется по лицензии MIT, см. файл `LICENSE`. Автор: Zelefi.
+The project is distributed under the MIT License, see the `LICENSE` file. Author: Zelefi.
 
-## Дисклеймер
+## Disclaimer
 
-Проект не связан с Saber Interactive и Focus Home Interactive. SnowRunner и связанные названия принадлежат их владельцам. В репозитории нет файлов игры: для экспорта нужна собственная установленная копия SnowRunner. Программа предназначена для личного использования с легально приобретённой игрой.
+This project is not affiliated with Saber Interactive or Focus Home Interactive. SnowRunner and related names belong to their owners. The repository contains no game files: export requires your own installed copy of SnowRunner. The program is intended for personal use with a legally purchased game.
